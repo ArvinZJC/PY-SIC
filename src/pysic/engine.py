@@ -1,10 +1,10 @@
 '''
 Description: the simple image converter's engine
-Version: 1.0.0.20211002
+Version: 1.0.0.20211004
 Author: Arvin Zhao
 Date: 2021-09-19 23:17:09
 Last Editors: Arvin Zhao
-LastEditTime: 2021-10-02 15:52:22
+LastEditTime: 2021-10-04 17:44:00
 '''
 
 from pathlib import Path
@@ -22,7 +22,11 @@ class SIC:
     The class for defining the simple image converter's engine.
     '''
 
-    def __init__(self, input_path: str, has_pbar: bool = True, output_dir: str = None) -> None:
+    def __init__(
+        self,
+        input_path: str,
+        has_pbar: bool = True,
+        output_dir: str = None) -> None:
         '''
         The constructor of the class for defining the simple image converter's engine.
 
@@ -41,7 +45,12 @@ class SIC:
         self.__output_dir = output_dir
         self.__pbar = None
 
-    def __convert_img(self, input_path: str, output_dir: str, to_fmt: str, alpha_threshold: int = ALPHA_THRESHOLD) -> None:
+    def __convert_img(
+        self,
+        input_path: str,
+        output_dir: str,
+        to_fmt: str,
+        alpha_threshold: int = ALPHA_THRESHOLD) -> None:
         '''
         Convert an input image to an image of the specified format.
         
@@ -111,7 +120,12 @@ class SIC:
         
         return count
 
-    def convert(self, to_fmt: str, alpha_threshold: int = ALPHA_THRESHOLD, input_path: str = None, output_dir: str = None) -> None:
+    def convert(
+        self,
+        to_fmt: str,
+        alpha_threshold: int = ALPHA_THRESHOLD,
+        input_path: str = None,
+        output_dir: str = None) -> None:
         '''
         Perform the image conversion tasks.
 
@@ -124,7 +138,7 @@ class SIC:
 
         Raises
         ------
-        `OSError`: the path to an input image or the directory for locating the input image(s) does not exist; check the input path
+        `OSError`: the path to an input image or the directory for locating the input image(s) does not exist, or the directory is empty; check the input path
         '''
 
         input_path = self.__input_path if input_path is None else input_path
@@ -151,6 +165,9 @@ class SIC:
         else:
             if os.path.isdir(self.__input_path):
                 with os.scandir(self.__input_path) as entries:
+                    if sum(1 for _ in entries) == 0:
+                        raise OSError('empty input path.')
+
                     for entry in entries:
                         self.convert(
                             alpha_threshold = alpha_threshold,
@@ -160,27 +177,3 @@ class SIC:
                         )
             else:
                 raise OSError('no such input path.')
-
-
-def guide() -> None:
-    '''
-    A default guide for a console application to convert images using the engine.
-    '''
-
-    input_path = input('Enter the full path to an input image or the directory for locating the input image(s):\n').strip()
-    to_fmt = input('\nEnter the target image format for conversion:\n').strip()
-
-    # TODO: output? rmtree for path/dir?
-
-    if to_fmt.lower() == 'gif':
-        alpha_threshold = int(input('\nEnter the threshold for the alpha channel:\n'))  # TODO: fail to convert to int? more hints? default?
-
-    with SIC(input_path = input_path) as sic:
-        print('Start to convert. Please do not operate the input path/directory until the conversion process completes.')
-
-        try:
-            sic.convert(alpha_threshold = alpha_threshold, to_fmt = to_fmt)
-        except OSError:
-            print('Failed due to no such input path/directory.')
-        except ValueError:
-            print('Failed due to the unsupported target image format.')
