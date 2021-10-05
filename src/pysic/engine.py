@@ -1,10 +1,10 @@
 '''
 Description: the simple image converter's engine
-Version: 1.0.0.20211005
+Version: 1.0.0.20211006
 Author: Arvin Zhao
 Date: 2021-09-19 23:17:09
 Last Editors: Arvin Zhao
-LastEditTime: 2021-10-05 18:53:38
+LastEditTime: 2021-10-06 00:02:58
 '''
 
 from pathlib import Path
@@ -40,22 +40,81 @@ class SIC:
         self.__has_pbar = has_pbar
         self.__input_path = input_path
 
-    def __init_pbar(self):
+    def __convert(
+        self,
+        to_fmt: str,
+        alpha_threshold: int = ALPHA_THRESHOLD,
+        has_init_pbar: bool = False,
+        has_input_structure: bool = True,
+        input_path: str = None,
+        output_dir: str = '') -> list:
         '''
-        Initialise the progress bar.
+        Process the image conversion tasks.
+
+        Parameters
+        ----------
+        `to_fmt`: the target image format for conversion
+        `alpha_threshold`: the threshold for the alpha channel
+        `has_init_pbar`: a flag indicating if the progress bar should be initialised
+        `has_input_structure`: a flag indicating if the file structure of the input directory should be kept
+        `input_path`: the path to an input image or the directory for locating the input image(s), useful for a part of the tasks
+        `output_dir`: the output directory for the converted image(s), useful for a part of the tasks
+
+        Returns
+        -------
+        `fail_tasks`: a list of failed conversion tasks
+
+        Raises
+        ------
+        `EmptyInputError`: the input directory contains no image for conversion; check the input path
+        `FileNotFoundError`: the path to an input image or the directory for locating the input image(s) does not exist; check the input path
+        `ValueError`: from the function `__convert_img`
         '''
 
-        if self.__has_pbar:
-            self.__pbar = tqdm(total = self.__plan(input_path = self.__input_path))
+        input_path = self.__input_path if input_path is None else input_path
+        fail_tasks = []
+
+        if has_init_pbar:
+            self.__init_pbar()
+
+        if os.path.isfile(input_path):
+            if not self.__convert_img(
+                alpha_threshold = alpha_threshold,
+                input_path = input_path,
+                output_dir = output_dir,
+                to_fmt = to_fmt
+            ):
+                fail_tasks.append(input_path)
+
+            if self.__has_pbar:
+                self.__pbar.update()
         else:
-            self.__pbar = None
+            if os.path.isdir(input_path):
+                with os.scandir(input_path) as entries:
+                    count = 0
+
+                    for entry in entries:
+                        count += 1
+                        self.__convert(
+                            alpha_threshold = alpha_threshold,
+                            input_path = entry.path,
+                            output_dir = os.path.join(self.__output_dir, *Path(entry.path).parts[len(Path(self.__input_path).parts):-1]) if has_input_structure else self.__output_dir,
+                            to_fmt = to_fmt
+                        )
+                    
+                    if count == 0:
+                        raise EmptyInputError        
+            else:
+                raise FileNotFoundError(self.__INPUT_NOT_FOUND + input_path)
+
+        return fail_tasks
 
     def __convert_img(
         self,
         input_path: str,
         output_dir: str,
         to_fmt: str,
-        alpha_threshold: int = ALPHA_THRESHOLD) -> None:
+        alpha_threshold: int = ALPHA_THRESHOLD) -> bool:
         '''
         Convert an input image to an image of the specified format.
         
@@ -67,6 +126,10 @@ class SIC:
         `output_dir`: the output directory for the converted image
         `to_fmt`: the target image format for conversion
         `alpha_threshold`: the threshold for the alpha channel
+
+        Returns
+        -------
+        `result`: a flag indicating if the conversion is successful
 
         Raises
         ------
@@ -101,8 +164,20 @@ class SIC:
                         )
                     else:
                         im.save(format = to_fmt, fp = output_path)
+
+                return True
             except OSError:
-                print('Failed to convert for', input_path)  # TODO: may interrupt pbar
+                return False
+
+    def __init_pbar(self):
+        '''
+        Initialise the progress bar.
+        '''
+
+        if self.__has_pbar:
+            self.__pbar = tqdm(total = self.__plan(input_path = self.__input_path))
+        else:
+            self.__pbar = None
 
     def __plan(self, input_path: str, count: int = 0) -> int:
         '''
@@ -133,67 +208,6 @@ class SIC:
             return count
         
         raise FileNotFoundError(self.__INPUT_NOT_FOUND + input_path)
-
-    def __convert(
-        self,
-        to_fmt: str,
-        alpha_threshold: int = ALPHA_THRESHOLD,
-        has_init_pbar: bool = False,
-        has_input_structure: bool = True,
-        input_path: str = None,
-        output_dir: str = '') -> None:
-        '''
-        Process the image conversion tasks.
-
-        Parameters
-        ----------
-        `to_fmt`: the target image format for conversion
-        `alpha_threshold`: the threshold for the alpha channel
-        `has_init_pbar`: a flag indicating if the progress bar should be initialised
-        `has_input_structure`: a flag indicating if the file structure of the input directory should be kept
-        `input_path`: the path to an input image or the directory for locating the input image(s), useful for a part of the tasks
-        `output_dir`: the output directory for the converted image(s), useful for a part of the tasks
-
-        Raises
-        ------
-        `EmptyInputError`: the input directory contains no image for conversion; check the input path
-        `FileNotFoundError`: the path to an input image or the directory for locating the input image(s) does not exist; check the input path
-        `ValueError`: from the function `__convert_img`
-        '''
-
-        input_path = self.__input_path if input_path is None else input_path
-
-        if has_init_pbar:
-            self.__init_pbar()
-
-        if os.path.isfile(input_path):
-            self.__convert_img(
-                alpha_threshold = alpha_threshold,
-                input_path = input_path,
-                output_dir = output_dir,
-                to_fmt = to_fmt
-            )
-
-            if self.__has_pbar:
-                self.__pbar.update()
-        else:
-            if os.path.isdir(input_path):
-                with os.scandir(input_path) as entries:
-                    count = 0
-
-                    for entry in entries:
-                        count += 1
-                        self.__convert(
-                            alpha_threshold = alpha_threshold,
-                            input_path = entry.path,
-                            output_dir = os.path.join(self.__output_dir, *Path(entry.path).parts[len(Path(self.__input_path).parts):-1]) if has_input_structure else self.__output_dir,
-                            to_fmt = to_fmt
-                        )
-                    
-                    if count == 0:
-                        raise EmptyInputError        
-            else:
-                raise FileNotFoundError(self.__INPUT_NOT_FOUND + input_path)
 
     def convert(
         self,
@@ -232,7 +246,7 @@ class SIC:
             elif sum(1 for _ in os.scandir(self.__output_dir)) > 0:
                     raise FileExistsError('the output directory is not empty')
 
-        self.__convert(
+        fail_tasks = self.__convert(
             alpha_threshold = alpha_threshold,
             output_dir = self.__output_dir,
             has_init_pbar = True,
@@ -240,6 +254,8 @@ class SIC:
             to_fmt = to_fmt
         )
 
+        for fail_task in fail_tasks:
+            print('Failed to convert', fail_task)
 
 # For simple tests only.
 if __name__ == '__main__':
