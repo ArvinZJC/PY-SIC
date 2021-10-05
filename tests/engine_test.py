@@ -1,10 +1,10 @@
 '''
 Description: the unit test of the simple image converter's engine
-Version: 1.0.0.20211004
+Version: 1.0.0.20211005
 Author: Arvin Zhao
 Date: 2021-09-26 23:57:52
 Last Editors: Arvin Zhao
-LastEditTime: 2021-10-04 22:22:04
+LastEditTime: 2021-10-05 18:42:39
 '''
 
 import os
@@ -18,6 +18,7 @@ BASE_DIR = os.path.join(
 sys.path.append(BASE_DIR)
 
 from engine import SIC
+from engine_errors import EmptyInputError
 
 
 class EngineTest(unittest.TestCase):
@@ -35,6 +36,7 @@ class EngineTest(unittest.TestCase):
         '''
         
         super().__init__(methodName = method_name)
+        self.__FAIL = 'Fail:'
         self.__sic = SIC(input_path = os.path.join('cases', 'img'))  # ATTENTION: you need to prepare your own test images to perform valid tests.
 
     def __convert(self, to_fmt: str) -> bool:
@@ -53,12 +55,16 @@ class EngineTest(unittest.TestCase):
         print('Target format:', to_fmt)
 
         try:
-            self.__sic.convert(to_fmt = to_fmt)
+            self.__sic.convert(has_init_output = True, to_fmt = to_fmt)
             return True  # TODO: real conversion check?
-        except OSError:
-            print('Failed due to empty input directory or no such input path/directory.')
-        except ValueError:
-            print('Failed due to the unsupported target image format.')
+        except EmptyInputError as empty_input:
+            print(self.__FAIL, empty_input)
+        except FileExistsError as file_exists:
+            print(self.__FAIL, file_exists)
+        except FileNotFoundError as input_not_found:
+            print(self.__FAIL, input_not_found)
+        except ValueError as value:
+            print(self.__FAIL, value)
         
         return False
 

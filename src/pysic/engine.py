@@ -1,19 +1,20 @@
 '''
 Description: the simple image converter's engine
-Version: 1.0.0.20211004
+Version: 1.0.0.20211005
 Author: Arvin Zhao
 Date: 2021-09-19 23:17:09
 Last Editors: Arvin Zhao
-LastEditTime: 2021-10-04 23:51:42
+LastEditTime: 2021-10-05 18:53:38
 '''
 
 from pathlib import Path
-from shutil import copy2
+from shutil import copy2, rmtree
 from tqdm import tqdm
 import os
 
 from PIL import Image
 
+from engine_errors import EmptyInputError
 from pillow_gif_patch import ALPHA_THRESHOLD, save_transparent_gif
 
 
@@ -33,6 +34,7 @@ class SIC:
         '''
 
         self.__IMG_FMTS_VALID = ['gif', 'png']  # A list of the image formats supported by the engine.
+        self.__INPUT_NOT_FOUND = 'no such input path/directory: '
         self.__OUTPUT_FOLDER = 'output_'  # Part of the default output folder name (output_<extension>).
 
         self.__has_pbar = has_pbar
@@ -74,7 +76,7 @@ class SIC:
         to_fmt = to_fmt.lower()
 
         if to_fmt not in self.__IMG_FMTS_VALID:
-            raise ValueError('not an image format supported by SIC.')
+            raise ValueError(to_fmt + ' is not an image format supported by SIC')
 
         f, ext = os.path.splitext(os.path.basename(input_path))  # The input image filename and the extension.
         ext = ext.lower()
@@ -100,7 +102,7 @@ class SIC:
                     else:
                         im.save(format = to_fmt, fp = output_path)
             except OSError:
-                print('Failed to convert for', input_path)
+                print('Failed to convert for', input_path)  # TODO: may interrupt pbar
 
     def __plan(self, input_path: str, count: int = 0) -> int:
         '''
@@ -114,24 +116,32 @@ class SIC:
         Returns
         -------
         `task_count`: the number of conversion tasks
+
+        Raises
+        ------
+        `FileNotFoundError`: the path to an input image or the directory for locating the input image(s) does not exist; check the input path
         '''
 
         if os.path.isfile(input_path):
             return 1
         
-        with os.scandir(input_path) as entries:
-            for entry in entries:
-                count = (count if os.path.isfile(entry.path) else 0) + self.__plan(input_path = entry.path, count = count)
+        if os.path.isdir(input_path):
+            with os.scandir(input_path) as entries:
+                for entry in entries:
+                    count = (count if os.path.isfile(entry.path) else 0) + self.__plan(input_path = entry.path, count = count)  # Only count images for conversion.
+            
+            return count
         
-        return count
+        raise FileNotFoundError(self.__INPUT_NOT_FOUND + input_path)
 
     def __convert(
         self,
         to_fmt: str,
         alpha_threshold: int = ALPHA_THRESHOLD,
+        has_init_pbar: bool = False,
+        has_input_structure: bool = True,
         input_path: str = None,
-        output_dir: str = '',
-        pbar_init: bool = False) -> None:
+        output_dir: str = '') -> None:
         '''
         Process the image conversion tasks.
 
@@ -139,19 +149,21 @@ class SIC:
         ----------
         `to_fmt`: the target image format for conversion
         `alpha_threshold`: the threshold for the alpha channel
+        `has_init_pbar`: a flag indicating if the progress bar should be initialised
+        `has_input_structure`: a flag indicating if the file structure of the input directory should be kept
         `input_path`: the path to an input image or the directory for locating the input image(s), useful for a part of the tasks
         `output_dir`: the output directory for the converted image(s), useful for a part of the tasks
-        `pbar_init`: a flag indicating if the progress bar should be initialised
 
         Raises
         ------
-        `OSError`: the path to an input image or the directory for locating the input image(s) does not exist, or the directory is empty; check the input path and ensure no manual operation on the input path/directory until the conversion completes
-        `ValueError`: due to the function `__convert_img`
+        `EmptyInputError`: the input directory contains no image for conversion; check the input path
+        `FileNotFoundError`: the path to an input image or the directory for locating the input image(s) does not exist; check the input path
+        `ValueError`: from the function `__convert_img`
         '''
 
         input_path = self.__input_path if input_path is None else input_path
 
-        if pbar_init:
+        if has_init_pbar:
             self.__init_pbar()
 
         if os.path.isfile(input_path):
@@ -174,20 +186,21 @@ class SIC:
                         self.__convert(
                             alpha_threshold = alpha_threshold,
                             input_path = entry.path,
-                            output_dir = os.path.join(self.__output_dir, *Path(entry.path).parts[len(Path(self.__input_path).parts):-1]),  # TODO: add support for not keeping original file structure?
+                            output_dir = os.path.join(self.__output_dir, *Path(entry.path).parts[len(Path(self.__input_path).parts):-1]) if has_input_structure else self.__output_dir,
                             to_fmt = to_fmt
                         )
                     
                     if count == 0:
-                        raise OSError('empty input directory.')
-                        
+                        raise EmptyInputError        
             else:
-                raise OSError('no such input path/directory.')
+                raise FileNotFoundError(self.__INPUT_NOT_FOUND + input_path)
 
     def convert(
         self,
         to_fmt: str,
         alpha_threshold: int = ALPHA_THRESHOLD,
+        has_init_output: bool = False,
+        has_input_structure: bool = True,
         output_dir: str = None) -> None:
         '''
         Perform the image conversion tasks requested by the user.
@@ -196,19 +209,62 @@ class SIC:
         ----------
         `to_fmt`: the target image format for conversion
         `alpha_threshold`: the threshold for the alpha channel
+        `has_init_output`: a flag indicating if the output directory should be cleaned up first
+        `has_input_structure`: a flag indicating if the file structure of the input directory should be kept
         `output_dir`: the output directory for the converted image(s)
 
         Returns
         -------
-        `OSError`: due to the function `__convert`
-        `ValueError`: due to the function `__convert`
+        `EmptyInputError`: from the function `__convert`
+        `FileExistsError`: the output directory is not empty; check the output directory
+        `FileNotFoundError`: from the function `__convert`
+        `ValueError`: from the function `__convert`
         '''
 
-        self.__output_dir = os.path.join(os.path.dirname(os.path.abspath(self.__input_path)), self.__OUTPUT_FOLDER + to_fmt.lower()) if output_dir is None else output_dir  # TODO: special occasion when the output dir already exists originally.
-        # TODO: clean output dir? allow user control this?
+        self.__output_dir = os.path.join(os.path.dirname(os.path.abspath(self.__input_path)), self.__OUTPUT_FOLDER + to_fmt.lower()) if output_dir is None else output_dir
+
+        if os.path.isdir(self.__output_dir):
+            if has_init_output:
+                try:
+                    rmtree(self.__output_dir)
+                except Exception:
+                    raise FileExistsError('you may need to empty the output directory manually')
+            elif sum(1 for _ in os.scandir(self.__output_dir)) > 0:
+                    raise FileExistsError('the output directory is not empty')
+
         self.__convert(
             alpha_threshold = alpha_threshold,
             output_dir = self.__output_dir,
-            pbar_init = True,
+            has_init_pbar = True,
+            has_input_structure = has_input_structure,
             to_fmt = to_fmt
         )
+
+
+# For simple tests only.
+if __name__ == '__main__':
+    FAIL = 'Fail:'
+
+    sic = SIC(input_path = os.path.join(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.dirname(os.path.abspath(__file__))
+            )
+        ),
+        'tests',
+        'cases',
+        'img')
+    )  # ATTENTION: you need to prepare your own test images to perform valid tests.
+    to_fmt = 'Gif'
+
+    try:
+        sic.convert(has_init_output = True, to_fmt = to_fmt)
+        # TODO: real conversion check?
+    except EmptyInputError as empty_input:
+        print(FAIL, empty_input)
+    except FileExistsError as file_exists:
+        print(FAIL, file_exists)
+    except FileNotFoundError as input_not_found:
+        print(FAIL, input_not_found)
+    except ValueError as value:
+        print(FAIL, value)
