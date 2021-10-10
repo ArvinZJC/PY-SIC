@@ -1,10 +1,12 @@
 """
+'''
 Description: the simple image converter's engine
-Version: 1.0.0.20211009
+Version: 1.0.0.20211010
 Author: Arvin Zhao
 Date: 2021-09-19 23:17:09
 Last Editors: Arvin Zhao
-LastEditTime: 2021-10-09 10:40:52
+LastEditTime: 2021-10-10 10:40:52
+'''
 """
 
 from pathlib import Path

@@ -1,10 +1,12 @@
 """
+'''
 Description: a patch for Pillow to save transparent GIF images
-Version: 1.0.2.20211009
+Version: 1.0.2.20211010
 Author: egocarib (https://github.com/egocarib)
 Date: 2021-09-19 13:12:58
 Last Editors: Arvin Zhao
-LastEditTime: 2021-10-09 10:42:08
+LastEditTime: 2021-10-10 10:42:08
+'''
 """
 
 # Origin: https://gist.github.com/egocarib/ea022799cca8a102d14c54a22c45efe0.
