@@ -1,11 +1,11 @@
 """
 '''
 Description: user-defined exceptions for SIC
-Version: 1.0.0.20211010
+Version: 1.0.0.20211011
 Author: Arvin Zhao
 Date: 2021-10-05 16:59:04
 Last Editors: Arvin Zhao
-LastEditTime: 2021-10-10 01:13:13
+LastEditTime: 2021-10-11 01:13:13
 '''
 """
 

@@ -47,6 +47,9 @@ class TransparentAnimatedGifConverter:
         """
         self.__img_rgba = img_rgba
         self.__alpha_threshold = alpha_threshold
+        self.__img_p = None
+        self.__img_p_data = None
+        self.__palette_replaces = None
 
     def __process_pixels(self) -> None:
         """Set the transparent pixels to the colour 0."""

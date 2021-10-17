@@ -1,11 +1,11 @@
 """
 '''
 Description: the simple image converter's engine
-Version: 1.0.0.20211010
+Version: 1.0.0.20211017
 Author: Arvin Zhao
 Date: 2021-09-19 23:17:09
 Last Editors: Arvin Zhao
-LastEditTime: 2021-10-10 10:40:52
+LastEditTime: 2021-10-17 10:40:52
 '''
 """
 
@@ -16,8 +16,8 @@ import os
 
 from PIL import Image
 
-from engine_errors import EmptyInputError
-from pillow_gif_patch import ALPHA_THRESHOLD, save_transparent_gif
+from src.pysic.errors import EmptyInputError
+from src.pysic.pillow_gif_patch import ALPHA_THRESHOLD, save_transparent_gif
 
 
 class SIC:
@@ -44,6 +44,7 @@ class SIC:
 
         self.__has_pbar = has_pbar
         self.__input_path = input_path
+        self.__output_dir = None
 
     def __convert(
         self,
@@ -80,12 +81,12 @@ class SIC:
         Raises
         ------
         EmptyInputError
-            The input directory contains no image for conversion; check the input path.
+            The input directory contains no image for conversion. Check the input path.
         FileNotFoundError
-            The path to an input image or the directory for locating the input image(s) does not exist; check the input
+            The path to an input image or the directory for locating the input image(s) does not exist. Check the input
             path.
         ValueError
-            The target image format for conversion is not supported; check the target format. This error comes from a
+            The target image format for conversion is not supported. Check the target format. This error comes from a
             called function.
         """
         input_path = self.__input_path if input_path is None else input_path
@@ -164,7 +165,7 @@ class SIC:
         Raises
         ------
         ValueError
-            The target image format for conversion is not supported; check the target format.
+            The target image format for conversion is not supported. Check the target format.
         """
         to_fmt = to_fmt.lower()
 
@@ -228,7 +229,7 @@ class SIC:
         Raises
         ------
         FileNotFoundError
-            The path to an input image or the directory for locating the input image(s) does not exist; check the input
+            The path to an input image or the directory for locating the input image(s) does not exist. Check the input
             path.
         """
         if os.path.isfile(input_path):
@@ -271,15 +272,15 @@ class SIC:
         Returns
         -------
         EmptyInputError
-            The input directory contains no image for conversion; check the input path. This error comes from a called
+            The input directory contains no image for conversion. Check the input path. This error comes from a called
             function.
         FileExistsError
-            The output directory is not empty; check the output directory.
+            The output directory is not empty. Check the output directory.
         FileNotFoundError
-            The path to an input image or the directory for locating the input image(s) does not exist; check the input
+            The path to an input image or the directory for locating the input image(s) does not exist. Check the input
             path. This error comes from a called function.
         ValueError
-            The target image format for conversion is not supported; check the target format. This error comes from a
+            The target image format for conversion is not supported. Check the target format. This error comes from a
             called function.
         """
         self.__output_dir = (

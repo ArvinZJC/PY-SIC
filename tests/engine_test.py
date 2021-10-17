@@ -1,23 +1,23 @@
 """
 '''
 Description: the unit test of the simple image converter's engine
-Version: 1.0.0.20211010
+Version: 1.0.0.20211017
 Author: Arvin Zhao
 Date: 2021-09-26 23:57:52
 Last Editors: Arvin Zhao
-LastEditTime: 2021-10-10 10:42:47
+LastEditTime: 2021-10-17 10:42:47
 '''
 """
 
 import os
-import sys
 import unittest
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASE_DIR)
+# Test local install the package.
+# from pysic.engine import SIC
+# from pysic.errors import EmptyInputError
 
 from src.pysic.engine import SIC
-from src.pysic.engine_errors import EmptyInputError
+from src.pysic.errors import EmptyInputError
 
 
 class EngineTest(unittest.TestCase):
