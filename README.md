@@ -2,8 +2,8 @@
 
 # PY-SIC
 
-[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/ArvinZJC/PY-SIC?include_prereleases)](../../releases)
-[![GitHub All Releases](https://img.shields.io/github/downloads/ArvinZJC/PY-SIC/total)](../../releases)
+![PyPI](https://img.shields.io/pypi/v/PY-SIC)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/PY-SIC)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/99f6ed42fe8544caab83f0f8a49d50e0)](https://www.codacy.com/gh/ArvinZJC/PY-SIC/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ArvinZJC/PY-SIC&amp;utm_campaign=Badge_Grade)
 ![GitHub](https://img.shields.io/github/license/ArvinZJC/PY-SIC)
 
