@@ -1,11 +1,11 @@
 """
 '''
 Description: the simple image converter's engine
-Version: 1.0.0.20211017
+Version: 1.0.0.20211018
 Author: Arvin Zhao
 Date: 2021-09-19 23:17:09
 Last Editors: Arvin Zhao
-LastEditTime: 2021-10-17 10:40:52
+LastEditTime: 2021-10-18 10:40:52
 '''
 """
 
@@ -48,8 +48,8 @@ class SIC:
 
     def __convert(
         self,
+        alpha_threshold: int,
         to_fmt: str,
-        alpha_threshold: int = ALPHA_THRESHOLD,
         has_init_pbar: bool = False,
         has_input_structure: bool = True,
         input_path: str = None,
@@ -59,10 +59,10 @@ class SIC:
 
         Parameters
         ----------
+        alpha_threshold : int
+            The threshold for the alpha channel.
         to_fmt : str
             The target image format for conversion.
-        alpha_threshold : int, optional
-            The threshold for the alpha channel (the default is defined by a constant `ALPHA_THRESHOLD`).
         has_init_pbar : bool, optional
             A flag indicating if the progress bar should be initialised (the default is `False`).
         has_input_structure : bool, optional
@@ -135,11 +135,7 @@ class SIC:
         return fail_tasks
 
     def __convert_img(
-        self,
-        input_path: str,
-        output_dir: str,
-        to_fmt: str,
-        alpha_threshold: int = ALPHA_THRESHOLD,
+        self, alpha_threshold: int, input_path: str, output_dir: str, to_fmt: str
     ) -> bool:
         """Convert an input image to an image of the specified format.
 
@@ -148,14 +144,14 @@ class SIC:
 
         Parameters
         ----------
+        alpha_threshold : int
+            The threshold for the alpha channel.
         input_path : str
             The path to an input image.
         output_dir : str
             The output directory for the converted image.
         to_fmt : str
             The target image format for conversion.
-        alpha_threshold : int, optional
-            The threshold for the alpha channel (the default is defined by a constant `ALPHA_THRESHOLD`).
 
         Returns
         -------
